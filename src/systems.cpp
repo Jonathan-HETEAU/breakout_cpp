@@ -26,6 +26,19 @@ void DrawSystem(const flecs::entity &entity, const Position &position, const Sha
     }
 }
 
+void DrawHudSystem(flecs::iter& it){
+    
+    GameInfo infos = it.world().get<GameInfo>();
+    Arena arena = it.world().get<Arena>();
+    const auto infosLive = TextFormat("  Live : %d", infos.live);
+    const auto infosSCore = TextFormat("%d : score  ", infos.score);
+
+    DrawText(infosLive, 0 , arena.bound.height - FONT_SIZE , FONT_SIZE , WHITE );
+
+    DrawText(infosSCore, arena.bound.width - MeasureText(infosSCore, FONT_SIZE) , arena.bound.height - FONT_SIZE , FONT_SIZE , WHITE );
+    
+}
+
 void MoveSystem(flecs::iter &it, size_t, Position &p, const Velocity &v)
 {
     p.x += v.x * SPEED * it.delta_time();
@@ -58,9 +71,8 @@ void BallCollisionSystem(flecs::iter &it, size_t row, const Ball &b, Position &p
                 ballRectangle.y = position.y;
                 //Lerp(-45, 45, float amount);
                 const auto normal = Normalize(collision.x + collision.width /2  , paddleRectangle.x , paddleRectangle.x + paddleRectangle.width ) -0.5f;
-                const float angle = Vector2Angle({0,1},{v.x,v.y}) * 180 / PI;
                 v.y *= -1;
-                const auto vrotate = Vector2Rotate({v.x,v.y},normal);
+                const auto vrotate = Vector2Rotate({v.x,v.y},normal*1.5);
                 v.y = vrotate.y;
                 v.x = vrotate.x;
                 

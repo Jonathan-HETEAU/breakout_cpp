@@ -4,6 +4,7 @@
 #include "components.hpp"
 
 void DrawSystem(const flecs::entity &entity, const Position &position, const Shape &shape);
+void DrawHudSystem(flecs::iter& it);
 void MoveSystem(flecs::iter &it, size_t, Position &p, const Velocity &v);
 void InputSystem(const InputBinding &ib, Input &i);
 void ActionSystem(flecs::iter &it, size_t, const Input &i, Velocity &v);

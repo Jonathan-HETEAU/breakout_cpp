@@ -32,16 +32,15 @@ void addPaddle(flecs::world &world)
         .add<Paddle>();
 }
 
-void addBrick(flecs::world &world , int x , int y){
+void addBrick(flecs::world &world, int x, int y)
+{
     world.entity()
-        .insert([x,y](Position &p, Velocity &v, Shape &s)
+        .insert([x, y](Position &p, Velocity &v, Shape &s)
                 {
                     p = {(float)x * Unit , (float)y * Unit};
                     v = {0,0};
-                    s = {Rec , {0,0, 2 * Unit, Unit}};
-                })
+                    s = {Rec , {0,0, 2 * Unit, Unit}}; })
         .add<Brick>();
-
 }
 
 flecs::world initWorld()
@@ -57,32 +56,45 @@ flecs::world initWorld()
     world.system<const Input, Velocity>()
         .each(ActionSystem);
 
-    world.system<const Position, const Shape>()
-        .each(DrawSystem);
-
     world.system<const Ball, Position, Velocity, const Shape>()
         .each(BallCollisionSystem);
 
-    world.system<Paddle , Position, const Shape>()
+    world.system<Paddle, Position, const Shape>()
         .each(PaddleCollisionSystem);
 
-    world.observer<Ball,Out>().event(flecs::OnAdd).each([](flecs::entity e, Ball , Out){
-        e.destruct();
-    });
+    world.system<const Position, const Shape>()
+        .each(DrawSystem);
 
-    world.observer<Brick,Hit>().event(flecs::OnAdd).each([](flecs::entity e, Brick , Hit){
-        e.destruct();
-    });
+    world.system("HUD").run(DrawHudSystem);
+
+    world.observer<Ball, Out>().event(flecs::OnAdd)
+        .each([](flecs::entity e, Ball, Out)
+            { 
+                GameInfo gi = e.world().get<GameInfo>();
+                gi.live --;
+                e.world().set<GameInfo>(gi);
+                e.destruct(); 
+            });
+
+    world.observer<Brick, Hit>().event(flecs::OnAdd)
+        .each([](flecs::entity e, Brick, Hit)
+            {
+                GameInfo gi = e.world().get<GameInfo>();
+                gi.score += 10;
+                e.world().set<GameInfo>(gi); 
+                e.destruct(); 
+            });
+
+    world.set<GameInfo>({ 3 , 0 });
 
     addBall(world);
     addPaddle(world);
-    addBrick(world,1,1);
-    addBrick(world,3,1);
-    addBrick(world,5,1);
-    addBrick(world,1,3);
-    addBrick(world,3,3);
-    addBrick(world,5,3);
-    
+
+    for( int x = 0 ; x < 12 ; x++){
+        for( int y = 0 ; y < 4 ; y++){
+            addBrick(world, x * 2, y);
+        }
+    }
     return world;
 }
 
@@ -101,11 +113,12 @@ int main(int argc, char *argv[])
 
     flecs::world world = initWorld();
 
-    world.set<Arena>({0,0,GAME_WIDTH, GAME_HEIGHT});
+    world.set<Arena>({0, 0, GAME_WIDTH, GAME_HEIGHT});
 
     while (!WindowShouldClose())
-    {   
-        if(IsKeyPressed(KEY_SPACE)){
+    {
+        if (IsKeyPressed(KEY_SPACE))
+        {
             addBall(world);
         }
 

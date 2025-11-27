@@ -9,6 +9,10 @@ struct Hit{};
 
 struct Out {};
 
+struct GameInfo{
+    int live ; 
+    int score;
+};
 
 struct Arena{
     Rectangle bound ; 
