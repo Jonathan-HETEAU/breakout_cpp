@@ -1,5 +1,6 @@
 #include <flecs.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <cmath>
 #include <stdlib.h>
 #include <algorithm>
@@ -52,16 +53,17 @@ void BallCollisionSystem(flecs::iter &it, size_t row, const Ball &b, Position &p
                  {
         const Rectangle paddleRectangle = {paddlePosition.x + paddleShape.bound.x , paddlePosition.y + paddleShape.bound.y , paddleShape.bound.width , paddleShape.bound.height};
         if (CheckCollisionRecs(ballRectangle , paddleRectangle)){
-            const Rectangle collision = GetCollisionRec (ballRectangle , paddleRectangle );
-            if(collision.height < collision.width){
-                position.y -= (2 *  collision.height);
+            const Rectangle collision = GetCollisionRec (paddleRectangle, ballRectangle );
+                position.y -= collision.height;
                 ballRectangle.y = position.y;
+                //Lerp(-45, 45, float amount);
+                const auto normal = Normalize(collision.x + collision.width /2  , paddleRectangle.x , paddleRectangle.x + paddleRectangle.width ) -0.5f;
+                const float angle = Vector2Angle({0,1},{v.x,v.y}) * 180 / PI;
                 v.y *= -1;
-            }else{
-                position.x -= (2 * collision.width);
-                ballRectangle.x = position.x;
-                v.x *= -1;
-            }
+                const auto vrotate = Vector2Rotate({v.x,v.y},normal);
+                v.y = vrotate.y;
+                v.x = vrotate.x;
+                
         } });
 
     it.world().query<Brick, const Position, const Shape>().each([&ballRectangle, &v, &position](flecs::entity e, Brick, const Position &pb, const Shape &sb)
