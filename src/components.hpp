@@ -3,7 +3,16 @@
 
 struct Paddle {};
 struct Ball {};
+struct Brick {};
+
 struct Hit{};
+
+struct Out {};
+
+
+struct Arena{
+    Rectangle bound ; 
+};
 
 struct Position
 {

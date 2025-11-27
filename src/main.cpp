@@ -1,5 +1,6 @@
 #include <flecs.h>
 #include <raylib.h>
+#include <raymath.h>
 #include <cmath>
 
 #include "components.hpp"
@@ -12,7 +13,8 @@ void addBall(flecs::world &world)
         .insert([](Position &p, Velocity &v, Shape &s)
                 {
                     p = {GAME_WIDTH/2.f,GAME_HEIGHT/2.f};
-                    v = {0, 1}; 
+                    auto normal = Vector2Normalize({-1, -1});
+                    v = {normal.x , normal.y};
                     s = {Circle , {0,0,DemiUnit,DemiUnit} }; })
         .add<Ball>();
 }
@@ -28,6 +30,18 @@ void addPaddle(flecs::world &world)
                     i = {false, false};
                     ib = {KEY_LEFT,KEY_RIGHT}; })
         .add<Paddle>();
+}
+
+void addBrick(flecs::world &world , int x , int y){
+    world.entity()
+        .insert([x,y](Position &p, Velocity &v, Shape &s)
+                {
+                    p = {(float)x * Unit , (float)y * Unit};
+                    v = {0,0};
+                    s = {Rec , {0,0, 2 * Unit, Unit}};
+                })
+        .add<Brick>();
+
 }
 
 flecs::world initWorld()
@@ -49,9 +63,26 @@ flecs::world initWorld()
     world.system<const Ball, Position, Velocity, const Shape>()
         .each(BallCollisionSystem);
 
+    world.system<Paddle , Position, const Shape>()
+        .each(PaddleCollisionSystem);
+
+    world.observer<Ball,Out>().event(flecs::OnAdd).each([](flecs::entity e, Ball , Out){
+        e.destruct();
+    });
+
+    world.observer<Brick,Hit>().event(flecs::OnAdd).each([](flecs::entity e, Brick , Hit){
+        e.destruct();
+    });
+
     addBall(world);
     addPaddle(world);
-
+    addBrick(world,1,1);
+    addBrick(world,3,1);
+    addBrick(world,5,1);
+    addBrick(world,1,3);
+    addBrick(world,3,3);
+    addBrick(world,5,3);
+    
     return world;
 }
 
@@ -70,8 +101,14 @@ int main(int argc, char *argv[])
 
     flecs::world world = initWorld();
 
+    world.set<Arena>({0,0,GAME_WIDTH, GAME_HEIGHT});
+
     while (!WindowShouldClose())
-    {
+    {   
+        if(IsKeyPressed(KEY_SPACE)){
+            addBall(world);
+        }
+
         BeginTextureMode(target);
         ClearBackground(BLACK);
         world.progress();
